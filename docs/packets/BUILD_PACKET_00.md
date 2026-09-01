@@ -1124,6 +1124,9 @@ jobs:
         run: |
           go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
           sudo apt-get update && sudo apt-get install -y postgresql-client
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+            | sh -s -- -b "$(go env GOPATH)/bin" v2.12.2
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       # CI has no Docker Compose stack — Postgres is a service container — so the
       # check targets are run directly here with the runner's own psql client.
@@ -1142,12 +1145,18 @@ jobs:
       - name: Layer guard
         run: make check-layers
 
-      - uses: golangci/golangci-lint-action@v6
-        with:
-          working-directory: api
+      # Deliberately NOT golangci-lint-action: it pins its own golangci-lint version,
+      # which drifts from the developer's. Installing an explicit version above and
+      # running `make lint` means CI runs exactly the command you run locally.
+      # Bump the pinned version here and in the prerequisites together.
+      - name: Lint
+        run: make lint
 
-      - run: make test
-      - run: make build
+      - name: Tests
+        run: make test
+
+      - name: Build
+        run: make build
 ```
 
 `migrate-redo` applies every migration, rolls them all back, and applies them again. A
