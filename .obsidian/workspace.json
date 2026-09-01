@@ -188,14 +188,21 @@
       "bases:Create new base": false
     }
   },
-  "active": "6c2856ad3239269b",
+  "active": "ab3c8b6d12effadb",
   "lastOpenFiles": [
+    "ops/checks/check_rls.sql",
+    "ops/checks/check_no_blobs.sql",
+    "ops/checks/check_layers.sh",
+    "ops/checks",
     "docs/adr/0003-ledger-based-finance.md",
     "docs/adr/0002-contract-first-openapi.md",
     "docs/adr/0001-pooled-multi-tenancy-with-rls.md",
     "docs/adr",
-    "api/bin/api",
-    "api/bin",
-    "Makefile"
+    "docker-compose.yml",
+    "db/migrations/000002_app_role.up.sql",
+    "db/migrations/000002_app_role.down.sql",
+    "db/migrations/000001_platform_foundation.up.sql",
+    "db/migrations/000001_platform_foundation.down.sql",
+    "db/migrations"
   ]
 }

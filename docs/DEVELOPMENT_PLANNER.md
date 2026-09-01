@@ -654,6 +654,6 @@ caching · on TestFlight and Play internal testing · used by real residents.
 
 Append after each packet. What actually happened, not what was planned.
 
-| Packet | Started | Merged | Actual days | Notes |
-| --- | --- | --- | --- | --- |
-| 00 | | | | |
+| Packet | Started | Merged | Est. | Actual | Notes |
+| --- | --- | --- | ---: | ---: | --- |
+| 00 | 2026-09-01 | 2026-09-01 | 5 | ~1 | Merged as `755c2f7`. **Not a fair velocity signal** — Claude wrote the scaffolding and Go; from Packet 01 the domain code is hand-written, so treat 5 days as the realistic baseline. Four plan corrections, all fixed in the packet: PG18 wants one mount at `/var/lib/postgresql` not `/data`; host port moved to 5433 (Homebrew PostgreSQL held 5432 and shadowed the container); Go module path `.../civicsync/api` not `.../CivicSync/api`; `golangci-lint-action` replaced by a pinned binary + `make lint` so CI runs the same command as local. Fiber v3 compiled first time. |

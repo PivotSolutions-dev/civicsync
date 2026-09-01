@@ -1314,6 +1314,24 @@ git push -u origin v2
 
 ---
 
+## Deviations found while building (1 Sep 2026)
+
+This document has been **corrected** to match what actually worked. Recorded here so a
+future reader knows it was fixed rather than written correctly first time.
+
+| Found | Was | Now |
+| --- | --- | --- |
+| Postgres container exited on first start | `pgdata:/var/lib/postgresql/data` | PG18 wants a **single mount at `/var/lib/postgresql`** and places the cluster in a version-specific subdirectory. See docker-library/postgres#1259 |
+| `migrate` hit a database with no `civicsync` role | Host port 5432 | **5433.** A local Homebrew PostgreSQL binds `127.0.0.1:5432`; Docker's wildcard bind loses to it for `localhost` |
+| Every Go import path wrong | `github.com/PivotSolutions-dev/CivicSync/api` | **`.../civicsync/api`** — `CivicSync` is now the prototype repository |
+| CI lint step failed in 1s | `golangci-lint-action@v6` | Pinned `golangci-lint` v2.12.2 installed in the tooling step, then `make lint`. The action manages its own version, which drifts from the developer's |
+| `make run` printed `Error 1` on Ctrl-C | `cd api && go run ./cmd/api` | Leading `-` on the recipe. `go run` exits non-zero on SIGINT regardless of a clean shutdown |
+| No local `psql` 18 available on Intel macOS | `psql` prerequisite | Database checks run via `docker compose exec postgres psql`, so the client always matches the server |
+
+None of these were findable by reading. That is the argument for Packet 00 existing.
+
+---
+
 ## What I need back before Packet 01
 
 1. `make ci` passes, and both role flags are `f`
