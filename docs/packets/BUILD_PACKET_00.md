@@ -22,11 +22,17 @@ this codebase from rotting the way the prototype did.
 
 ## Prerequisites
 
+> **No local `psql` needed.** The database checks run through
+> `docker compose exec postgres psql`, so the client always matches the server version by
+> construction and nothing extra is installed on your machine. Any local `psql` you happen
+> to have is irrelevant to this packet.
+
+
 ```bash
-go version          # need 1.25+
+go version                # need 1.26+
 docker --version
-migrate -version    # brew install golang-migrate
-psql --version      # brew install postgresql@18
+docker compose version
+migrate -version          # brew install golang-migrate
 golangci-lint --version   # brew install golangci-lint
 ```
 
@@ -118,8 +124,15 @@ services:
       POSTGRES_USER: civicsync
       POSTGRES_PASSWORD: civicsync
       POSTGRES_DB: civicsync
-    ports: ["5432:5432"]
-    volumes: ["pgdata:/var/lib/postgresql/data"]
+    # Host port 5433 deliberately: a local Homebrew PostgreSQL commonly holds 5432.
+    ports: ["5433:5432"]
+    volumes:
+      # PostgreSQL 18+ wants ONE mount at /var/lib/postgresql and places the cluster in a
+      # version-specific subdirectory beneath it. Mounting /var/lib/postgresql/data — the
+      # pre-18 convention — makes the image refuse to start.
+      # See https://github.com/docker-library/postgres/pull/1259
+      - "pgdata:/var/lib/postgresql"
+      - "./ops/checks:/checks:ro"     # so psql inside the container can read the guards
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U civicsync"]
       interval: 5s
@@ -170,10 +183,10 @@ APP_ENV=development
 PORT=8080
 
 # Migrator connection — owns the schema, runs migrations. NOT used by the API.
-DATABASE_URL=postgres://civicsync:civicsync@localhost:5432/civicsync?sslmode=disable
+DATABASE_URL=postgres://civicsync:civicsync@localhost:5433/civicsync?sslmode=disable
 
 # Application connection — non-owner, no BYPASSRLS. This is what the API uses.
-APP_DATABASE_URL=postgres://civicsync_app:civicsync_app_dev@localhost:5432/civicsync?sslmode=disable
+APP_DATABASE_URL=postgres://civicsync_app:civicsync_app_dev@localhost:5433/civicsync?sslmode=disable
 
 REDIS_URL=redis://localhost:6379/0
 
@@ -475,7 +488,7 @@ The allowlist covers short cryptographic values, which are legitimate. Anything 
 # internal/domain must stay pure: no imports from app, store, http, or platform.
 set -euo pipefail
 
-MODULE="github.com/PivotSolutions-dev/CivicSync/api"
+MODULE="github.com/PivotSolutions-dev/civicsync/api"
 
 cd "$(dirname "$0")/../../api"
 
@@ -510,7 +523,7 @@ chmod +x ops/checks/check_layers.sh
 mkdir -p api/cmd/api api/internal/{domain,app,store} \
          api/internal/http api/internal/platform/{config,database,logging,reqctx}
 cd api
-go mod init github.com/PivotSolutions-dev/CivicSync/api
+go mod init github.com/PivotSolutions-dev/civicsync/api
 go get github.com/gofiber/fiber/v3
 go get github.com/jackc/pgx/v5
 go get github.com/google/uuid
@@ -761,7 +774,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/PivotSolutions-dev/CivicSync/api/internal/platform/reqctx"
+	"github.com/PivotSolutions-dev/civicsync/api/internal/platform/reqctx"
 )
 
 const problemJSON = "application/problem+json"
@@ -802,8 +815,8 @@ import (
 	recoverer "github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 
-	"github.com/PivotSolutions-dev/CivicSync/api/internal/platform/database"
-	"github.com/PivotSolutions-dev/CivicSync/api/internal/platform/reqctx"
+	"github.com/PivotSolutions-dev/civicsync/api/internal/platform/database"
+	"github.com/PivotSolutions-dev/civicsync/api/internal/platform/reqctx"
 )
 
 func NewApp(db *database.DB) *fiber.App {
@@ -850,11 +863,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/PivotSolutions-dev/CivicSync/api/internal/platform/config"
-	"github.com/PivotSolutions-dev/CivicSync/api/internal/platform/database"
-	"github.com/PivotSolutions-dev/CivicSync/api/internal/platform/logging"
+	"github.com/PivotSolutions-dev/civicsync/api/internal/platform/config"
+	"github.com/PivotSolutions-dev/civicsync/api/internal/platform/database"
+	"github.com/PivotSolutions-dev/civicsync/api/internal/platform/logging"
 
-	apihttp "github.com/PivotSolutions-dev/CivicSync/api/internal/http"
+	apihttp "github.com/PivotSolutions-dev/civicsync/api/internal/http"
 )
 
 func main() {
@@ -933,7 +946,7 @@ Recipe lines use **tabs**.
 
 ```make
 SHELL  := /bin/bash
-DB_URL ?= postgres://civicsync:civicsync@localhost:5432/civicsync?sslmode=disable
+DB_URL ?= postgres://civicsync:civicsync@localhost:5433/civicsync?sslmode=disable
 
 .PHONY: init up down logs migrate-up migrate-down migrate-redo \
         check-rls check-blobs check-layers lint test build run verify ci
@@ -967,11 +980,14 @@ migrate-redo:
 	migrate -path db/migrations -database "$(DB_URL)" down -all
 	migrate -path db/migrations -database "$(DB_URL)" up
 
+# Run through the container so the psql client always matches the server.
 check-rls:
-	psql "$(DB_URL)" -v ON_ERROR_STOP=1 -f ops/checks/check_rls.sql
+	docker compose exec -T postgres psql -U civicsync -d civicsync \
+	  -v ON_ERROR_STOP=1 -f /checks/check_rls.sql
 
 check-blobs:
-	psql "$(DB_URL)" -v ON_ERROR_STOP=1 -f ops/checks/check_no_blobs.sql
+	docker compose exec -T postgres psql -U civicsync -d civicsync \
+	  -v ON_ERROR_STOP=1 -f /checks/check_no_blobs.sql
 
 check-layers:
 	./ops/checks/check_layers.sh
@@ -985,8 +1001,10 @@ test:
 build:
 	cd api && go build -o bin/api ./cmd/api
 
+# Leading `-` ignores the exit status: Ctrl-C makes `go run` exit non-zero even
+# after a clean graceful shutdown, and the resulting "Error 1" is pure noise.
 run:
-	cd api && go run ./cmd/api
+	-cd api && go run ./cmd/api
 
 # Fast checks — no Docker, no database. This is what the pre-push hook runs.
 verify: check-layers lint test build
@@ -1085,45 +1103,60 @@ jobs:
           POSTGRES_USER: civicsync
           POSTGRES_PASSWORD: civicsync
           POSTGRES_DB: civicsync
-        ports: ["5432:5432"]
+        # Host port 5433 deliberately: a local Homebrew PostgreSQL commonly holds 5432.
+    ports: ["5433:5432"]
         options: >-
           --health-cmd "pg_isready -U civicsync"
           --health-interval 5s --health-timeout 3s --health-retries 10
 
     env:
-      DB_URL: postgres://civicsync:civicsync@localhost:5432/civicsync?sslmode=disable
+      DB_URL: postgres://civicsync:civicsync@localhost:5433/civicsync?sslmode=disable
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          go-version: "1.26"
           cache-dependency-path: api/go.sum
 
       - name: Install tooling
         run: |
           go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
           sudo apt-get update && sudo apt-get install -y postgresql-client
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+            | sh -s -- -b "$(go env GOPATH)/bin" v2.12.2
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      # CI has no Docker Compose stack — Postgres is a service container — so the
+      # check targets are run directly here with the runner's own psql client.
+      - name: Prepare check commands for CI
+        run: echo "PSQL=psql $DB_URL" >> "$GITHUB_ENV"
 
       - name: Migrations are reversible
         run: make migrate-redo
 
       - name: Tenant isolation guard
-        run: make check-rls
+        run: psql "$DB_URL" -v ON_ERROR_STOP=1 -f ops/checks/check_rls.sql
 
       - name: No file content in the database
-        run: make check-blobs
+        run: psql "$DB_URL" -v ON_ERROR_STOP=1 -f ops/checks/check_no_blobs.sql
 
       - name: Layer guard
         run: make check-layers
 
-      - uses: golangci/golangci-lint-action@v6
-        with:
-          working-directory: api
+      # Deliberately NOT golangci-lint-action: it pins its own golangci-lint version,
+      # which drifts from the developer's. Installing an explicit version above and
+      # running `make lint` means CI runs exactly the command you run locally.
+      # Bump the pinned version here and in the prerequisites together.
+      - name: Lint
+        run: make lint
 
-      - run: make test
-      - run: make build
+      - name: Tests
+        run: make test
+
+      - name: Build
+        run: make build
 ```
 
 `migrate-redo` applies every migration, rolls them all back, and applies them again. A
@@ -1264,7 +1297,7 @@ make ci               # all green
 Then confirm the security property everything else rests on:
 
 ```bash
-psql "postgres://civicsync:civicsync@localhost:5432/civicsync" \
+psql "postgres://civicsync:civicsync@localhost:5433/civicsync" \
   -c "SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolname='civicsync_app';"
 ```
 

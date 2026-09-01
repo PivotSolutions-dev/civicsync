@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Runs before every `git push`. A non-zero exit cancels the push.
+set -euo pipefail
+
+echo "→ running make verify before push…"
+
+if ! make verify; then
+    echo
+    echo "──────────────────────────────────────────────────────────────"
+    echo " PUSH CANCELLED — make verify failed."
+    echo
+    echo " Nothing is lost. Your commits are still here."
+    echo " Fix what is reported above, commit the fix, and push again."
+    echo
+    echo " Run the checks yourself any time with:   make verify"
+    echo " To push anyway (rarely correct):         git push --no-verify"
+    echo "──────────────────────────────────────────────────────────────"
+    exit 1
+fi
+
+echo "→ verify passed, pushing."
