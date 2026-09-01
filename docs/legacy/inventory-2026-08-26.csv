@@ -1,0 +1,75 @@
+"section","metric","detail","row_count","amount"
+"00_schema","database","civicsync",NULL,NULL
+"00_schema","later_column_present","member_documents.file_data",1,NULL
+"00_schema","later_column_present","notices.attachment_data",1,NULL
+"00_schema","later_column_present","payment_request_members.reinstates_payment_request_member_id",1,NULL
+"00_schema","later_column_present","payments.financial_year",1,NULL
+"00_schema","later_column_present","payments.payment_reference",1,NULL
+"00_schema","later_column_present","service_integrations.business_phone",1,NULL
+"00_schema","later_column_present","service_integrations.whatsapp_phone_number_id",1,NULL
+"00_schema","later_table_present","payment_escalation_settings",1,NULL
+"00_schema","later_table_present","whatsapp_webhook_events",1,NULL
+"00_schema","migrate_version","26",NULL,NULL
+"01_counts","activity_logs","",516,NULL
+"01_counts","expense_vouchers","",2,NULL
+"01_counts","member_documents","",8,NULL
+"01_counts","members_live","",361,NULL
+"01_counts","members_soft_deleted","",9,NULL
+"01_counts","members_total","",370,NULL
+"01_counts","migration_audit","",0,NULL
+"01_counts","notices","",1,NULL
+"01_counts","payment_request_members","",1,NULL
+"01_counts","payment_requests","",1,NULL
+"01_counts","payments","",955,NULL
+"01_counts","service_integrations","",4,NULL
+"01_counts","users","",370,NULL
+"01_counts","voucher_assignments","",2,NULL
+"02_members","contact_verified","phone=false email=false",358,NULL
+"02_members","contact_verified","phone=true email=false",1,NULL
+"02_members","contact_verified","phone=true email=true",2,NULL
+"02_members","status=active","verify=verified",2,NULL
+"02_members","status=inactive","verify=pending",358,NULL
+"02_members","status=inactive","verify=verified",1,NULL
+"02_members","tower=SHOP4","",1,NULL
+"02_members","tower=T1","",87,NULL
+"02_members","tower=T2","",90,NULL
+"02_members","tower=T3","",87,NULL
+"02_members","tower=T4","",92,NULL
+"02_members","tower=UNASSIGNED","",4,NULL
+"03_users","role=admin","org_role=General Secretary",1,NULL
+"03_users","role=admin","org_role=Joint Treasurer",2,NULL
+"03_users","role=member","org_role=Executive Member",365,NULL
+"03_users","role=super_admin","org_role=President",1,NULL
+"03_users","role=super_admin","org_role=Treasurer",1,NULL
+"04_documents","file_path_blank","",0,NULL
+"04_documents","type=allotment_letter","status=pending",3,NULL
+"04_documents","type=allotment_letter","status=verified",5,NULL
+"05_advice","GRAND_TOTAL","",1,576.15
+"05_advice","status=lapsed","",1,576.15
+"06_requests","status=sent","target=selected",1,501.00
+"07_payments","GRAND_TOTAL_SUCCESS","",955,1072892.00
+"07_payments","period=FY 2023-24","",363,375600.00
+"07_payments","period=FY 2024-25","",295,449651.00
+"07_payments","period=FY 2025-26","",254,194300.00
+"07_payments","period=FY 2026-27","",39,44145.00
+"07_payments","period=Legal FY 2025-26","",3,7996.00
+"07_payments","period=Membership Fee","",1,1200.00
+"07_payments","provider=legacy","status=success",955,1072892.00
+"07_payments","unlinked_to_advice","",955,1072892.00
+"08_vouchers","type=Legal","status=pending_approval",1,5000.00
+"08_vouchers","type=Petty Cash","status=pending_approval",1,1000.00
+"09_probe","aadhaar_stored","",7,NULL
+"09_probe","dup_phone_live","",0,NULL
+"09_probe","dup_tower_flat_live","",0,NULL
+"09_probe","email_missing_or_bad","",358,NULL
+"09_probe","flat_no_non_numeric","",4,NULL
+"09_probe","members_without_user","",0,NULL
+"09_probe","orphan_advice_no_member","",0,NULL
+"09_probe","orphan_payment_no_advice","",0,NULL
+"09_probe","orphan_payment_no_member","",0,NULL
+"09_probe","paid_advice_without_payment","",0,NULL
+"09_probe","phone_not_10_digits","",361,NULL
+"09_probe","tower_blank","",0,NULL
+"11_range","advice_due_date","2026-06-06 .. 2026-06-06",NULL,NULL
+"11_range","members_created","2026-05-31 .. 2026-06-01",NULL,NULL
+"11_range","payments_paid_at","2024-03-30 .. 2027-03-30",NULL,NULL

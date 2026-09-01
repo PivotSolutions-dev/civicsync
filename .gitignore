@@ -1,0 +1,34 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+
+# go
+api/bin/
+*.test
+coverage.out
+
+# node
+node_modules/
+admin/dist/
+admin/.vite/
+*.tsbuildinfo
+
+# flutter
+mobile/build/
+mobile/.dart_tool/
+
+# local data — NEVER commit database dumps
+*.dump
+*.sql.gz
+ops/local-data/
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# logs
+*.log
+npm-debug.log*
